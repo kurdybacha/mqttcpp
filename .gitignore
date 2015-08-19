@@ -1,0 +1,10 @@
+*.o
+*.exe
+*.db
+c/*.test
+cpp/*.test
+*.pyc
+*.vglog
+
+build/
+dist/
