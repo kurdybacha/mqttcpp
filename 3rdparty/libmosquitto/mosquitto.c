@@ -150,7 +150,7 @@ int mosquitto_reinitialise(struct mosquitto *mosq, const char *id, bool clean_se
 	mosq->last_retry_check = 0;
 	mosq->clean_session = clean_session;
 	if(id){
-		if(strlen(id) == 0){
+		if(STREMPTY(id)){
 			return MOSQ_ERR_INVAL;
 		}
 		mosq->id = _mosquitto_strdup(id);
@@ -549,9 +549,10 @@ int mosquitto_publish(struct mosquitto *mosq, int *mid, const char *topic, int p
 {
 	struct mosquitto_message_all *message;
 	uint16_t local_mid;
+	int queue_status;
 
 	if(!mosq || !topic || qos<0 || qos>2) return MOSQ_ERR_INVAL;
-	if(strlen(topic) == 0) return MOSQ_ERR_INVAL;
+	if(STREMPTY(topic)) return MOSQ_ERR_INVAL;
 	if(payloadlen < 0 || payloadlen > MQTT_MAX_PAYLOAD) return MOSQ_ERR_PAYLOAD_SIZE;
 
 	if(mosquitto_pub_topic_check(topic) != MOSQ_ERR_SUCCESS){
@@ -594,8 +595,8 @@ int mosquitto_publish(struct mosquitto *mosq, int *mid, const char *topic, int p
 		message->dup = false;
 
 		pthread_mutex_lock(&mosq->out_message_mutex);
-		_mosquitto_message_queue(mosq, message, mosq_md_out);
-		if(mosq->max_inflight_messages == 0 || mosq->inflight_messages < mosq->max_inflight_messages){
+		queue_status = _mosquitto_message_queue(mosq, message, mosq_md_out);
+		if(queue_status == 0){
 			if(qos == 1){
 				message->state = mosq_ms_wait_for_puback;
 			}else if(qos == 2){
@@ -933,10 +934,12 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 				}else
 #endif
 				{
-					rc = mosquitto_loop_read(mosq, max_packets);
-					if(rc || mosq->sock == INVALID_SOCKET){
-						return rc;
-					}
+					do{
+						rc = mosquitto_loop_read(mosq, max_packets);
+						if(rc || mosq->sock == INVALID_SOCKET){
+							return rc;
+						}
+					}while(SSL_DATA_PENDING(mosq));
 				}
 			}
 			if(mosq->sockpairR != INVALID_SOCKET && FD_ISSET(mosq->sockpairR, &readfds)){
@@ -1273,6 +1276,8 @@ void mosquitto_user_data_set(struct mosquitto *mosq, void *userdata)
 const char *mosquitto_strerror(int mosq_errno)
 {
 	switch(mosq_errno){
+		case MOSQ_ERR_CONN_PENDING:
+			return "Connection pending.";
 		case MOSQ_ERR_SUCCESS:
 			return "No error.";
 		case MOSQ_ERR_NOMEM:
@@ -1303,6 +1308,8 @@ const char *mosquitto_strerror(int mosq_errno)
 			return "Unknown error.";
 		case MOSQ_ERR_ERRNO:
 			return strerror(errno);
+		case MOSQ_ERR_EAI:
+			return "Lookup error.";
 		case MOSQ_ERR_PROXY:
 			return "Proxy error.";
 		default:
