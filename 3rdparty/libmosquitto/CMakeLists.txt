@@ -15,10 +15,10 @@ else (${WITH_THREADING} STREQUAL ON)
 	set (PTHREAD_INCLUDE_DIR "")
 endif (${WITH_THREADING} STREQUAL ON)
 
-include_directories(${dl_SOURCE_DIR} ${dl_SOURCE_DIR}/3rdparty/libmosquitto
+include_directories(${mqttcpp_SOURCE_DIR} ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto
 			${STDBOOL_H_PATH} ${STDINT_H_PATH}
 			${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIR})
-link_directories(${dl_SOURCE_DIR}/3rdparty/libmosquitto)
+link_directories(${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto)
 
 add_library(libmosquitto SHARED
 	config.h logging_mosq.c logging_mosq.h

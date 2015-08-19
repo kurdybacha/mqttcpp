@@ -1,6 +1,6 @@
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
-project(dl)
+project(mqttcpp)
 
 cmake_minimum_required(VERSION 2.8)
 # Only for version 3 and up. cmake_policy(SET CMP0042 NEW)
@@ -42,7 +42,7 @@ else (WIN32)
 	set (INCLUDEDIR include)
 	set (DATAROOTDIR share)
 	set (MANDIR ${DATAROOTDIR}/man)
-	set (SHAREDIR ${DATAROOTDIR}/dl)
+        set (SHAREDIR ${DATAROOTDIR}/mqttcpp)
 endif (WIN32)
 
 option(WITH_TLS

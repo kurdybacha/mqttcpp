@@ -1,6 +1,6 @@
-include_directories(${dl_SOURCE_DIR}/3rdparty/libmosquitto ${dl_SOURCE_DIR}/3rdparty/libmosquitto
+include_directories(${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto
 			${STDBOOL_H_PATH} ${STDINT_H_PATH})
-link_directories(${dl_BINARY_DIR}/3rdparty/libmosquitto)
+link_directories(${mqttcpp_BINARY_DIR}/3rdparty/libmosquitto)
 
 add_library(libmosquittopp SHARED
 	mosquittopp.cpp mosquittopp.h)
