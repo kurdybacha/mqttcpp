@@ -1,13 +1,19 @@
 include_directories(${mqttcpp_SOURCE_DIR}/base
          ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto
+         ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto/cpp
          ${mqttcpp_SOURCE_DIR}/network)
 
-link_directories(${mqttcpp_SOURCE_DIR}/network ${mqttcpp_SOURCE_DIR}/base ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto)
+link_directories(${mqttcpp_SOURCE_DIR}/base
+         ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto
+         ${mqttcpp_SOURCE_DIR}/3rdparty/libmosquitto/cpp
+         ${mqttcpp_SOURCE_DIR}/network)
+
+add_definitions(-std=c++1y)
 
 add_library(libnetwork SHARED
 	session.h session.cpp)
 
-target_link_libraries(libnetwork ${LIBRARIES})
+target_link_libraries(libnetwork libmosquittopp ${LIBRARIES})
 
 set_target_properties(libnetwork PROPERTIES
 	OUTPUT_NAME network

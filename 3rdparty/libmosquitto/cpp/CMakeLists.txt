@@ -12,7 +12,7 @@ set_target_properties(libmosquittopp PROPERTIES
 	SOVERSION 1
 )
 install(TARGETS libmosquittopp RUNTIME DESTINATION ${BINDIR} LIBRARY DESTINATION ${LIBDIR})
-#install(FILES mosquittopp.h DESTINATION ${INCLUDEDIR})
+install(FILES mosquittopp.h DESTINATION ${INCLUDEDIR})
 
 if (UNIX)
 	install(CODE "EXEC_PROGRAM(/sbin/ldconfig)")
