@@ -17,14 +17,13 @@
 
 int main(int argc, char *argv[])
 {
-    mqttcpp::Session::init();
-    mqttcpp::Session session("localhost", 1883, 60);
+    mqttcpp::Session session;
 
     session.set_connect_handler([&](int rc) -> void {
        if (rc == 0) {
            printf("Connected OK\n");
-           int mid = session.subscribe("chat/test");
-           printf("Subscribing to chat/test (mid=%d)...\n", mid);
+           mqttcpp::Session::Result result = session.subscribe("chat/test");
+           printf("Subscribing to chat/test (mid=%d)...\n", std::get<0>(result));
        }
     });
 
@@ -36,7 +35,7 @@ int main(int argc, char *argv[])
         printf("Subscribed (mid=%d, qos_count=%d)\n", mid, qos_count);
     });
 
-    session.connect(std::string(), std::string());
+    session.connect();
 
     int n;
     std::cin >> n;

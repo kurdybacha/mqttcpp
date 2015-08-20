@@ -2,15 +2,39 @@
 
 #include <mosquittopp.h>
 #include <iostream>
+#include <mutex>
 
 GL_BEGIN_NAMESPACE
 
+namespace {
+    const char *g_default_host = "localhost";
+    const int g_default_port = 1883;
+    const int g_default_keep_alive = 60;
+
+    struct Mosqpp
+    {
+        Mosqpp()
+        {
+            mosqpp::lib_init();
+        }
+        ~Mosqpp()
+        {
+            mosqpp::lib_cleanup();
+        }
+    };
+
+    void MosqInit()
+    {
+        static Mosqpp mosqpp;
+    }
+}
+
 struct SessionPrivate : public mosqpp::mosquittopp
 {
-    SessionPrivate(std::string host, int port, int keep_alive, Session *p)
-        : host(host)
-        , port(port)
-        , keep_alive(keep_alive)
+    SessionPrivate(Session *p)
+        : host(g_default_host)
+        , port(g_default_port)
+        , keep_alive(g_default_keep_alive)
         , p(p)
     {}
 
@@ -50,26 +74,58 @@ struct SessionPrivate : public mosqpp::mosquittopp
 
     virtual void on_log(int level, const char *str)
     {
-//        std::cerr << __func__ << level << str;
+//        std::cerr << __func__ << level << str << "\n";
     }
 
     virtual void on_error()
     {
-        std::cerr << __func__;
+//        std::cerr << __func__ << "\n";
     }
 };
 
-void Session::init()
+
+Session::Session()
 {
-    mosqpp::lib_init();
+    static std::once_flag flag;
+    std::call_once(flag, MosqInit);
+    d = std::make_unique<SessionPrivate>(this);
 }
 
-Session::Session(std::string host, int port, int keep_alive)
-    : d(std::make_unique<SessionPrivate>(host, port, keep_alive, this))
+Session::~Session()
 {
+    disconnect();
 }
 
-Session::~Session() = default;
+
+std::string Session::host() const
+{
+    return d->host;
+}
+
+void Session::set_host(std::string host)
+{
+    d->host = host;
+}
+
+int Session::port() const
+{
+    return d->port;
+}
+
+void Session::set_port(int port)
+{
+    d->port = port;
+}
+
+int Session::keep_alive() const
+{
+    return d->keep_alive;
+}
+
+void Session::set_keep_alive(int keep_alive)
+{
+    d->keep_alive = keep_alive;
+}
 
 void Session::set_connect_handler(ConnectHandler handler)
 {
@@ -86,26 +142,37 @@ void Session::set_subscribe_handler(SubscribeHandler handler)
     d->subscribe_handler = handler;
 }
 
-void Session::connect(const std::string &username, const std::string &password)
+Session::Result Session::connect(const std::string &username, const std::string &password)
 {
     if (!username.empty() && !password.empty())
         d->username_pw_set(username.data(), password.data());
-    d->connect_async(d->host.data(), d->port, d->keep_alive);
-    d->loop_start();
+
+    int result = d->connect_async(d->host.data(), d->port, d->keep_alive);
+    if (result == MOSQ_ERR_SUCCESS)
+        result = d->loop_start();
+
+    return std::make_tuple(result == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
 }
 
-int Session::subscribe(const std::string &topic)
+Session::Result Session::disconnect()
 {
-    int mid;
-    d->subscribe(&mid, topic.data(), 1);
-    return mid;
+    d->disconnect();
+    int result = d->loop_stop();
+    return std::make_tuple(result == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
 }
 
-int Session::publish(const std::string &topic, const std::string &message)
+Session::Result Session::subscribe(const std::string &topic)
 {
     int mid;
-    d->publish(&mid, topic.data(), message.size(), message.data());
-    return mid;
+    int result = d->subscribe(&mid, topic.data(), 1);
+    return std::make_tuple(result == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, mid);
+}
+
+Session::Result Session::publish(const std::string &topic, const std::string &message)
+{
+    int mid;
+    int result = d->publish(&mid, topic.data(), message.size(), message.data());
+    return std::make_tuple(result == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, mid);
 }
 
 
