@@ -452,7 +452,7 @@ int mosquitto_connect_bind_async(struct mosquitto *mosq, const char *host, int p
 
 int mosquitto_reconnect_async(struct mosquitto *mosq)
 {
-	return _mosquitto_reconnect(mosq, false);
+    return _mosquitto_reconnect(mosq, false);
 }
 
 int mosquitto_reconnect(struct mosquitto *mosq)

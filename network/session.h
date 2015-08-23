@@ -20,12 +20,13 @@ public:
    };
 
    typedef std::function<void(int)>                           ConnectHandler;
+   typedef std::function<void(int)>                           DisconnectHandler;
    typedef std::function<void(int, std::string, std::string)> MessageHandler;
    typedef std::function<void(int, int)>                      SubscribeHandler;
    typedef std::tuple<ResultCode, int>                        Result;
 
    Session();
-   ~Session();
+   virtual ~Session();
 
    std::string host() const;
    void set_host(std::string host);
@@ -45,6 +46,11 @@ public:
    void set_connect_handler(ConnectHandler handler);
    void set_message_handler(MessageHandler handler) ;
    void set_subscribe_handler(SubscribeHandler handler);
+   void set_disconnect_handler(DisconnectHandler handler);
+
+   Result start();
+   Result stop();
+private:
 
 private:
    GL_DISABLE_COPY(Session)

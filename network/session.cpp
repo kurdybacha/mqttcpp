@@ -45,6 +45,7 @@ struct SessionPrivate : public mosqpp::mosquittopp
     Session::ConnectHandler connect_handler;
     Session::MessageHandler message_handler;
     Session::SubscribeHandler subscribe_handler;
+    Session::DisconnectHandler disconnect_handler;
 
     virtual void on_connect(int rc)
     {
@@ -53,6 +54,7 @@ struct SessionPrivate : public mosqpp::mosquittopp
 
     virtual void on_disconnect(int rc)
     {
+        disconnect_handler(rc);
     }
 
     virtual void on_publish(int mid)
@@ -74,7 +76,7 @@ struct SessionPrivate : public mosqpp::mosquittopp
 
     virtual void on_log(int level, const char *str)
     {
-//        std::cerr << __func__ << level << str << "\n";
+//        std::cerr << __func__ << level << ", " << str << "\n";
     }
 
     virtual void on_error()
@@ -93,7 +95,6 @@ Session::Session()
 
 Session::~Session()
 {
-    disconnect();
 }
 
 
@@ -132,6 +133,11 @@ void Session::set_connect_handler(ConnectHandler handler)
     d->connect_handler = handler;
 }
 
+void Session::set_disconnect_handler(DisconnectHandler handler)
+{
+    d->disconnect_handler = handler;
+}
+
 void Session::set_message_handler(MessageHandler handler)
 {
     d->message_handler = handler;
@@ -148,18 +154,24 @@ Session::Result Session::connect(const std::string &username, const std::string 
         d->username_pw_set(username.data(), password.data());
 
     int result = d->connect_async(d->host.data(), d->port, d->keep_alive);
-    if (result == MOSQ_ERR_SUCCESS)
-        result = d->loop_start();
-
     return std::make_tuple(result == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
 }
 
 Session::Result Session::disconnect()
 {
-    d->disconnect();
-    int result = d->loop_stop();
-    return std::make_tuple(result == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
+    return std::make_tuple(d->disconnect() == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
 }
+
+Session::Result Session::start()
+{
+    return std::make_tuple(d->loop_start() == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
+}
+
+Session::Result Session::stop()
+{
+    return std::make_tuple(d->loop_stop() == MOSQ_ERR_SUCCESS ? Session::SUCCESS : Session::INVALID, 0);
+}
+
 
 Session::Result Session::subscribe(const std::string &topic)
 {
