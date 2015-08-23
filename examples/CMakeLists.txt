@@ -5,8 +5,8 @@ link_directories(${mosquitto_BINARY_DIR}/network)
 
 add_definitions(-std=c++1y)
 
-add_executable(mqttcpp_sub mqttcpp_sub.cpp)
+add_executable(mqttcpp_client mqttcpp_client.cpp)
 
-target_link_libraries(mqttcpp_sub libnetwork)
+target_link_libraries(mqttcpp_client libnetwork)
 
-install(TARGETS mqttcpp_sub RUNTIME DESTINATION ${BINDIR} LIBRARY DESTINATION ${LIBDIR})
+install(TARGETS mqttcpp_client RUNTIME DESTINATION ${BINDIR} LIBRARY DESTINATION ${LIBDIR})
